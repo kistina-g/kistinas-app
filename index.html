@@ -142,6 +142,25 @@
   }
   #status-banner a { color: inherit; }
 
+  /* ---- sections ---- */
+  .section { margin-bottom: 24px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .section-head .dot { width: 10px; height: 10px; }
+  .section-head h2 {
+    font-size: 0.95rem;
+    margin: 0;
+    font-weight: 700;
+  }
+  .section-count {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -153,6 +172,17 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 14px;
+    text-align: left;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  .card:hover { border-color: var(--text-muted); }
+  .card:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
   .card-head {
     display: flex;
@@ -180,6 +210,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .chevron {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
   .badge {
     display: inline-flex;
     align-items: center;
@@ -200,6 +235,7 @@
     font-size: 0.82rem;
     color: var(--text-secondary);
     line-height: 1.4;
+    text-align: left;
   }
   .detail ul { margin: 4px 0 0; padding-left: 18px; }
   .detail li { margin-bottom: 3px; }
@@ -226,6 +262,103 @@
     position: absolute; width: 1px; height: 1px;
     padding: 0; margin: -1px; overflow: hidden;
     clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* ---- modal ---- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5vh 16px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal {
+    background: var(--surface-1);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  .modal-head h2 {
+    font-size: 1.2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-bullet {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+  }
+  .modal-close {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .modal-close:hover { background: var(--chip-bg); color: var(--text-primary); }
+  .modal-body { padding: 16px 18px 20px; }
+
+  .alert-block {
+    border-left: 3px solid var(--neutral);
+    background: var(--chip-bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .alert-block-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 0.86rem;
+    margin-bottom: 4px;
+  }
+  .alert-block p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    white-space: pre-line;
+  }
+  .modal-meta {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gridline);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .modal-meta a { color: var(--text-secondary); }
+  .no-alerts {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 6px 0 2px;
   }
 
   @media (max-width: 480px) {
@@ -267,8 +400,18 @@
     Status data is pulled client-side from <a href="https://www.goodservice.io/" target="_blank" rel="noopener">goodservice.io</a>,
     a community-run, unofficial summary of MTA real-time feeds. For the official source, see
     <a href="https://new.mta.info/alerts" target="_blank" rel="noopener">new.mta.info/alerts</a>.
-    This page refreshes automatically every 60 seconds.
+    This page refreshes automatically every 60 seconds. Click any line for its active alerts.
   </footer>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title">Active Alerts for <span class="modal-bullet" id="modal-bullet"></span></h2>
+        <button class="modal-close" id="modal-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
 
 <script>
 (function () {
@@ -282,14 +425,26 @@
   var refreshBtn = document.getElementById("refresh-btn");
   var searchInput = document.getElementById("search");
   var themeToggle = document.getElementById("theme-toggle");
+  var modalOverlay = document.getElementById("modal-overlay");
+  var modalBullet = document.getElementById("modal-bullet");
+  var modalBody = document.getElementById("modal-body");
+  var modalClose = document.getElementById("modal-close");
 
   var latestRoutes = null;
   var timer = null;
+  var lastOpener = null;
+
+  var TIER_META = {
+    good:     { label: "Good Service",     var: "--good" },
+    warning:  { label: "Planned Work",     var: "--warning" },
+    serious:  { label: "Service Change",   var: "--serious" },
+    critical: { label: "Delays",           var: "--critical" },
+    neutral:  { label: "Not Running Now",  var: "--neutral" }
+  };
+  var TIER_ORDER = ["good", "warning", "serious", "critical", "neutral"];
 
   // ---- theme toggle (manual override on top of OS preference) ----
   (function initTheme() {
-    var saved = null;
-    try { saved = window.__themeOverride || null; } catch (e) {}
     themeToggle.addEventListener("click", function () {
       var root = document.documentElement;
       var current = root.getAttribute("data-theme");
@@ -308,13 +463,14 @@
     if (s.indexOf("good") !== -1) return "good";
     if (s.indexOf("planned") !== -1) return "warning";
     if (s.indexOf("service change") !== -1 || s.indexOf("reroute") !== -1) return "serious";
-    if (s.indexOf("delay") !== -1 || s.indexOf("suspend") !== -1 || s.indexOf("no service") !== -1 && s.indexOf("not scheduled") === -1) return "critical";
-    if (s.indexOf("not scheduled") !== -1 || s.indexOf("no data") !== -1) return "neutral";
+    if (s.indexOf("delay") !== -1 || s.indexOf("suspend") !== -1) return "critical";
+    if (s.indexOf("not scheduled") !== -1 || s.indexOf("no data") !== -1 || s.indexOf("no service") !== -1) return "neutral";
     return "neutral";
   }
 
   function tierVar(tier) {
-    return { good: "var(--good)", warning: "var(--warning)", serious: "var(--serious)", critical: "var(--critical)", neutral: "var(--neutral)" }[tier];
+    var meta = TIER_META[tier] || TIER_META.neutral;
+    return "var(" + meta.var + ")";
   }
 
   function escapeHtml(str) {
@@ -346,6 +502,40 @@
     return [1, 0, id];
   }
 
+  function routeColor(route) {
+    return route.color ? "#" + String(route.color).replace("#", "") : "#52514e";
+  }
+  function routeTextColor(route) {
+    return route.text_color ? "#" + String(route.text_color).replace("#", "") : "#fff";
+  }
+
+  function cardHtml(id, route, tier) {
+    var name = route.name || route.id || id;
+    var label = id.toUpperCase();
+    var statusLabel = route.status || "No data";
+    var messages = summaryMessages(route);
+
+    var detail = "";
+    if (messages.length) {
+      detail = '<div class="detail"><ul>' +
+        messages.slice(0, 2).map(function (m) { return "<li>" + escapeHtml(m) + "</li>"; }).join("") +
+        (messages.length > 2 ? "<li>+" + (messages.length - 2) + " more — click for details</li>" : "") +
+        '</ul></div>';
+    }
+
+    return (
+      '<button type="button" class="card" data-route="' + escapeHtml(id) + '" aria-label="' +
+        escapeHtml(label + " — " + name + " — " + statusLabel + ". View active alerts.") + '">' +
+        '<div class="card-head">' +
+          '<div class="bullet" style="background:' + routeColor(route) + ';color:' + routeTextColor(route) + '">' + escapeHtml(label) + '</div>' +
+          '<div class="card-name">' + escapeHtml(name) + '</div>' +
+          '<span class="badge"><span class="dot" style="background:' + tierVar(tier) + '"></span>' + escapeHtml(statusLabel) + '</span>' +
+        '</div>' +
+        detail +
+      '</button>'
+    );
+  }
+
   function render(routesObj) {
     var ids = Object.keys(routesObj || {});
     if (!ids.length) {
@@ -362,44 +552,111 @@
 
     var q = (searchInput.value || "").trim().toUpperCase();
 
-    var html = ids.map(function (id) {
+    // group by tier, preserving TIER_ORDER
+    var buckets = {};
+    TIER_ORDER.forEach(function (t) { buckets[t] = []; });
+
+    ids.forEach(function (id) {
       var route = routesObj[id] || {};
       var name = route.name || route.id || id;
       var label = id.toUpperCase();
-      if (q && label.indexOf(q) === -1 && String(name).toUpperCase().indexOf(q) === -1) return "";
-
+      if (q && label.indexOf(q) === -1 && String(name).toUpperCase().indexOf(q) === -1) return;
       var tier = statusTier(route.status);
-      var color = route.color ? "#" + String(route.color).replace("#", "") : "#52514e";
-      var textColor = route.text_color ? "#" + String(route.text_color).replace("#", "") : "#fff";
-      var statusLabel = route.status || "No data";
-      var messages = summaryMessages(route);
+      if (!buckets[tier]) buckets[tier] = [];
+      buckets[tier].push([id, route]);
+    });
 
-      var detail = "";
-      if (messages.length) {
-        detail = '<div class="detail"><ul>' +
-          messages.slice(0, 4).map(function (m) { return "<li>" + escapeHtml(m) + "</li>"; }).join("") +
-          '</ul></div>';
-      }
-
+    var sectionsHtml = TIER_ORDER.map(function (tier) {
+      var items = buckets[tier];
+      if (!items || !items.length) return "";
+      var meta = TIER_META[tier];
+      var cards = items.map(function (pair) { return cardHtml(pair[0], pair[1], tier); }).join("");
       return (
-        '<div class="card">' +
-          '<div class="card-head">' +
-            '<div class="bullet" style="background:' + color + ';color:' + textColor + '">' + escapeHtml(label) + '</div>' +
-            '<div class="card-name">' + escapeHtml(name) + '</div>' +
-            '<span class="badge"><span class="dot" style="background:' + tierVar(tier) + '"></span>' + escapeHtml(statusLabel) + '</span>' +
+        '<div class="section">' +
+          '<div class="section-head">' +
+            '<span class="dot" style="background:' + tierVar(tier) + '"></span>' +
+            '<h2>' + escapeHtml(meta.label) + '</h2>' +
+            '<span class="section-count">' + items.length + '</span>' +
           '</div>' +
-          detail +
+          '<div class="grid">' + cards + '</div>' +
         '</div>'
       );
     }).join("");
 
-    if (!html.trim()) {
+    if (!sectionsHtml.trim()) {
       content.innerHTML = '<div class="empty">No lines match “' + escapeHtml(searchInput.value) + '”.</div>';
       return;
     }
 
-    content.innerHTML = '<div class="grid">' + html + '</div>';
+    content.innerHTML = sectionsHtml;
   }
+
+  // ---- modal ----
+  function openModal(routeId, triggerEl) {
+    if (!latestRoutes || !latestRoutes[routeId]) return;
+    var route = latestRoutes[routeId];
+    var tier = statusTier(route.status);
+    var meta = TIER_META[tier];
+    var messages = summaryMessages(route);
+
+    lastOpener = triggerEl || null;
+
+    modalBullet.textContent = routeId.toUpperCase();
+    modalBullet.style.background = routeColor(route);
+    modalBullet.style.color = routeTextColor(route);
+
+    var bodyHtml = "";
+    if (messages.length) {
+      bodyHtml = messages.map(function (m) {
+        return (
+          '<div class="alert-block" style="border-left-color:' + tierVar(tier) + '">' +
+            '<div class="alert-block-head" style="color:' + tierVar(tier) + '">' +
+              escapeHtml(meta.label) +
+            '</div>' +
+            '<p>' + escapeHtml(m) + '</p>' +
+          '</div>'
+        );
+      }).join("");
+    } else if (tier === "good") {
+      bodyHtml = '<p class="no-alerts">No active alerts — the ' + escapeHtml(routeId.toUpperCase()) + ' line is running with good service.</p>';
+    } else {
+      bodyHtml = '<p class="no-alerts">Status: ' + escapeHtml(route.status || "No data") + '. No further detail was included in this feed.</p>';
+    }
+
+    bodyHtml += (
+      '<div class="modal-meta">' +
+        'From goodservice.io &middot; ' + escapeHtml(lastUpdatedEl.textContent || "") + '. ' +
+        '<a href="https://new.mta.info/alerts" target="_blank" rel="noopener">See full details on the official MTA site</a>.' +
+      '</div>'
+    );
+
+    modalBody.innerHTML = bodyHtml;
+    modalOverlay.hidden = false;
+    modalClose.focus();
+    document.addEventListener("keydown", onModalKeydown);
+  }
+
+  function closeModal() {
+    modalOverlay.hidden = true;
+    document.removeEventListener("keydown", onModalKeydown);
+    if (lastOpener && typeof lastOpener.focus === "function") lastOpener.focus();
+    lastOpener = null;
+  }
+
+  function onModalKeydown(e) {
+    if (e.key === "Escape") closeModal();
+  }
+
+  modalClose.addEventListener("click", closeModal);
+  modalOverlay.addEventListener("click", function (e) {
+    if (e.target === modalOverlay) closeModal();
+  });
+
+  // event delegation: card clicks (cards are re-created on every render)
+  content.addEventListener("click", function (e) {
+    var card = e.target.closest ? e.target.closest(".card") : null;
+    if (card && card.dataset.route) openModal(card.dataset.route, card);
+  });
 
   function showBanner(message) {
     banner.innerHTML = message;
@@ -414,7 +671,9 @@
     lastUpdatedEl.textContent = (stale ? "Last successful update " : "Updated ") + timeStr;
   }
 
-  function fetchStatus(isManual) {
+  var lastGoodTimestamp = null;
+
+  function fetchStatus() {
     refreshBtn.disabled = true;
     refreshBtn.textContent = "Refreshing…";
 
@@ -431,6 +690,7 @@
         var routes = data && data.routes;
         if (!routes) throw new Error("Unexpected response shape");
         latestRoutes = routes;
+        lastGoodTimestamp = Date.now();
         hideBanner();
         render(latestRoutes);
         setLastUpdated(new Date(), false);
@@ -439,7 +699,7 @@
         if (timeoutId) clearTimeout(timeoutId);
         if (latestRoutes) {
           // Keep showing the last good data, just warn.
-          setLastUpdated(new Date(latestUpdatedTimestampOr()), true);
+          setLastUpdated(new Date(lastGoodTimestamp || Date.now()), true);
           showBanner(
             "Couldn't refresh live status just now (" + escapeHtml(err && err.message ? err.message : "network error") +
             "). Showing the last data we loaded. &middot; " +
@@ -461,22 +721,17 @@
       });
   }
 
-  var lastGoodTimestamp = null;
-  function latestUpdatedTimestampOr() {
-    return lastGoodTimestamp || Date.now();
-  }
-
-  refreshBtn.addEventListener("click", function () { fetchStatus(true); });
+  refreshBtn.addEventListener("click", function () { fetchStatus(); });
   searchInput.addEventListener("input", function () {
     if (latestRoutes) render(latestRoutes);
   });
 
   function scheduleAutoRefresh() {
     if (timer) clearInterval(timer);
-    timer = setInterval(function () { fetchStatus(false); }, REFRESH_MS);
+    timer = setInterval(fetchStatus, REFRESH_MS);
   }
 
-  fetchStatus(false);
+  fetchStatus();
   scheduleAutoRefresh();
 })();
 </script>
