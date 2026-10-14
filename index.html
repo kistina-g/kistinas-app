@@ -204,13 +204,7 @@
   .forecast-day .day-icon { font-size: 1.4rem; margin: 4px 0; }
   .forecast-day .day-temps { font-size: 0.8rem; color: var(--text-muted); }
   .forecast-day .day-temps b { color: var(--text-primary); font-weight: 700; }
-  .source-note {
-    margin-top: 14px;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
-  .source-note a { color: var(--text-secondary); }
+  .forecast-day .day-humidity { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
 
   /* ---- sections ---- */
   .section { margin-bottom: 24px; }
@@ -316,17 +310,6 @@
     padding: 48px 12px;
     font-size: 0.9rem;
   }
-
-  footer {
-    max-width: 880px;
-    margin: 28px auto 0;
-    padding: 16px;
-    border-top: 1px solid var(--gridline);
-    font-size: 0.76rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
-  footer a { color: var(--text-secondary); }
 
   .sr-only {
     position: absolute; width: 1px; height: 1px;
@@ -470,13 +453,6 @@
 
       <div id="status-banner" class="banner"></div>
       <div id="content"><div class="loading">Loading live status…</div></div>
-
-      <div class="source-note">
-        Status data is pulled client-side from <a href="https://www.goodservice.io/" target="_blank" rel="noopener">goodservice.io</a>,
-        a community-run, unofficial summary of MTA real-time feeds. For the official source, see
-        <a href="https://new.mta.info/alerts" target="_blank" rel="noopener">new.mta.info/alerts</a>.
-        This page refreshes automatically every 60 seconds. Click any line for its active alerts.
-      </div>
     </div>
 
     <div id="panel-weather" role="tabpanel" aria-labelledby="tab-weather" hidden>
@@ -490,17 +466,8 @@
 
       <div id="weather-banner" class="banner"></div>
       <div id="weather-content"><div class="loading">Loading weather…</div></div>
-
-      <div class="source-note">
-        Weather data from <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (free, no key required).
-        For radar, hourly detail, and alerts, see <a href="https://weather.com/" target="_blank" rel="noopener">weather.com</a>.
-      </div>
     </div>
   </div>
-
-  <footer>
-    Built as a single static page — no server, no API keys. Switch tabs above for subway status or local weather.
-  </footer>
 
   <div class="modal-overlay" id="modal-overlay" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -946,13 +913,18 @@
       '</div>'
     );
 
+    var dailyHumidity = daily.relative_humidity_2m_mean;
     html += '<div class="forecast-grid">' + daily.time.map(function (dateStr, i) {
       var dInfo = weatherInfo(daily.weather_code[i]);
+      var humidityLine = (dailyHumidity && typeof dailyHumidity[i] === "number")
+        ? '<div class="day-humidity">' + Math.round(dailyHumidity[i]) + '% humidity</div>'
+        : "";
       return (
         '<div class="forecast-day">' +
           '<div class="day-name">' + (i === 0 ? "Today" : dayLabel(dateStr)) + '</div>' +
           '<div class="day-icon">' + dInfo[1] + '</div>' +
           '<div class="day-temps"><b>' + Math.round(daily.temperature_2m_max[i]) + '°</b> / ' + Math.round(daily.temperature_2m_min[i]) + '°</div>' +
+          humidityLine +
         '</div>'
       );
     }).join("") + '</div>';
@@ -972,7 +944,7 @@
     var url = "https://api.open-meteo.com/v1/forecast?latitude=" + encodeURIComponent(currentLocation.lat) +
       "&longitude=" + encodeURIComponent(currentLocation.lon) +
       "&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation" +
-      "&daily=weather_code,temperature_2m_max,temperature_2m_min" +
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean" +
       "&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=5";
 
     var controller = ("AbortController" in window) ? new AbortController() : null;
