@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NYC Subway Status</title>
+<meta name="description" content="Live NYC subway service alerts and delays, line by line.">
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --border:         rgba(11,11,11,0.10);
+    --chip-bg:        #f1f0ec;
+
+    --good:     #0ca30c;
+    --warning:  #fab219;
+    --serious:  #ec835a;
+    --critical: #d03b3b;
+    --neutral:  #898781;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --border:         rgba(255,255,255,0.10);
+      --chip-bg:        #232322;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --border:         rgba(255,255,255,0.10);
+    --chip-bg:        #232322;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  body { padding-bottom: 48px; }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+
+  header.top {
+    padding: 28px 0 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin: 0; }
+
+  .theme-btn {
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .theme-btn:hover { color: var(--text-primary); }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .search {
+    flex: 1 1 200px;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.9rem;
+  }
+  .search::placeholder { color: var(--text-muted); }
+
+  .refresh-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  button.refresh {
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  button.refresh:hover { color: var(--text-primary); }
+  button.refresh:disabled { opacity: 0.5; cursor: default; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 4px 0 18px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  #status-banner {
+    display: none;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border-left: 3px solid var(--critical);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+  #status-banner a { color: inherit; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bullet {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .card-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--chip-bg);
+    color: var(--text-primary);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .badge .dot { width: 7px; height: 7px; }
+
+  .detail {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .detail ul { margin: 4px 0 0; padding-left: 18px; }
+  .detail li { margin-bottom: 3px; }
+
+  .empty, .loading {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 48px 12px;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    max-width: 880px;
+    margin: 28px auto 0;
+    padding: 16px;
+    border-top: 1px solid var(--gridline);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  footer a { color: var(--text-secondary); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  @media (max-width: 480px) {
+    header.top { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <h1>NYC Subway Status</h1>
+        <p class="subtitle">Live service alerts and delays, line by line</p>
+      </div>
+      <button class="theme-btn" id="theme-toggle" type="button" aria-label="Toggle dark mode">Theme</button>
+    </header>
+
+    <div class="toolbar">
+      <input class="search" id="search" type="text" placeholder="Filter by line (e.g. A, 6, L)…" aria-label="Filter lines">
+      <div class="refresh-row">
+        <span id="last-updated">Loading…</span>
+        <button class="refresh" id="refresh-btn" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><span class="dot" style="background:var(--good)"></span>Good service</span>
+      <span><span class="dot" style="background:var(--warning)"></span>Planned work</span>
+      <span><span class="dot" style="background:var(--serious)"></span>Service change</span>
+      <span><span class="dot" style="background:var(--critical)"></span>Delays</span>
+      <span><span class="dot" style="background:var(--neutral)"></span>Not running now</span>
+    </div>
+
+    <div id="status-banner"></div>
+    <div id="content"><div class="loading">Loading live status…</div></div>
+  </div>
+
+  <footer>
+    Status data is pulled client-side from <a href="https://www.goodservice.io/" target="_blank" rel="noopener">goodservice.io</a>,
+    a community-run, unofficial summary of MTA real-time feeds. For the official source, see
+    <a href="https://new.mta.info/alerts" target="_blank" rel="noopener">new.mta.info/alerts</a>.
+    This page refreshes automatically every 60 seconds.
+  </footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var API_URL = "https://www.goodservice.io/api/routes?detailed=1";
+  var REFRESH_MS = 60000;
+  var content = document.getElementById("content");
+  var banner = document.getElementById("status-banner");
+  var lastUpdatedEl = document.getElementById("last-updated");
+  var refreshBtn = document.getElementById("refresh-btn");
+  var searchInput = document.getElementById("search");
+  var themeToggle = document.getElementById("theme-toggle");
+
+  var latestRoutes = null;
+  var timer = null;
+
+  // ---- theme toggle (manual override on top of OS preference) ----
+  (function initTheme() {
+    var saved = null;
+    try { saved = window.__themeOverride || null; } catch (e) {}
+    themeToggle.addEventListener("click", function () {
+      var root = document.documentElement;
+      var current = root.getAttribute("data-theme");
+      var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var next;
+      if (!current) next = prefersDark ? "light" : "dark";
+      else if (current === "dark") next = "light";
+      else next = "dark";
+      root.setAttribute("data-theme", next);
+    });
+  })();
+
+  function statusTier(status) {
+    if (!status) return "neutral";
+    var s = status.toLowerCase();
+    if (s.indexOf("good") !== -1) return "good";
+    if (s.indexOf("planned") !== -1) return "warning";
+    if (s.indexOf("service change") !== -1 || s.indexOf("reroute") !== -1) return "serious";
+    if (s.indexOf("delay") !== -1 || s.indexOf("suspend") !== -1 || s.indexOf("no service") !== -1 && s.indexOf("not scheduled") === -1) return "critical";
+    if (s.indexOf("not scheduled") !== -1 || s.indexOf("no data") !== -1) return "neutral";
+    return "neutral";
+  }
+
+  function tierVar(tier) {
+    return { good: "var(--good)", warning: "var(--warning)", serious: "var(--serious)", critical: "var(--critical)", neutral: "var(--neutral)" }[tier];
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function summaryMessages(route) {
+    var out = [];
+    var scs = route.service_change_summaries;
+    if (scs && typeof scs === "object") {
+      Object.keys(scs).forEach(function (dir) {
+        var msgs = scs[dir];
+        if (Array.isArray(msgs)) {
+          msgs.forEach(function (m) { if (m) out.push(m); });
+        } else if (typeof msgs === "string" && msgs) {
+          out.push(msgs);
+        }
+      });
+    }
+    // de-duplicate
+    return out.filter(function (m, i) { return out.indexOf(m) === i; });
+  }
+
+  function sortKey(id) {
+    var n = parseInt(id, 10);
+    if (!isNaN(n) && String(n) === id) return [0, n, ""];
+    return [1, 0, id];
+  }
+
+  function render(routesObj) {
+    var ids = Object.keys(routesObj || {});
+    if (!ids.length) {
+      content.innerHTML = '<div class="empty">No route data came back. Try refreshing, or check the official MTA status page.</div>';
+      return;
+    }
+
+    ids.sort(function (a, b) {
+      var ka = sortKey(a), kb = sortKey(b);
+      if (ka[0] !== kb[0]) return ka[0] - kb[0];
+      if (ka[1] !== kb[1]) return ka[1] - kb[1];
+      return ka[2] < kb[2] ? -1 : ka[2] > kb[2] ? 1 : 0;
+    });
+
+    var q = (searchInput.value || "").trim().toUpperCase();
+
+    var html = ids.map(function (id) {
+      var route = routesObj[id] || {};
+      var name = route.name || route.id || id;
+      var label = id.toUpperCase();
+      if (q && label.indexOf(q) === -1 && String(name).toUpperCase().indexOf(q) === -1) return "";
+
+      var tier = statusTier(route.status);
+      var color = route.color ? "#" + String(route.color).replace("#", "") : "#52514e";
+      var textColor = route.text_color ? "#" + String(route.text_color).replace("#", "") : "#fff";
+      var statusLabel = route.status || "No data";
+      var messages = summaryMessages(route);
+
+      var detail = "";
+      if (messages.length) {
+        detail = '<div class="detail"><ul>' +
+          messages.slice(0, 4).map(function (m) { return "<li>" + escapeHtml(m) + "</li>"; }).join("") +
+          '</ul></div>';
+      }
+
+      return (
+        '<div class="card">' +
+          '<div class="card-head">' +
+            '<div class="bullet" style="background:' + color + ';color:' + textColor + '">' + escapeHtml(label) + '</div>' +
+            '<div class="card-name">' + escapeHtml(name) + '</div>' +
+            '<span class="badge"><span class="dot" style="background:' + tierVar(tier) + '"></span>' + escapeHtml(statusLabel) + '</span>' +
+          '</div>' +
+          detail +
+        '</div>'
+      );
+    }).join("");
+
+    if (!html.trim()) {
+      content.innerHTML = '<div class="empty">No lines match “' + escapeHtml(searchInput.value) + '”.</div>';
+      return;
+    }
+
+    content.innerHTML = '<div class="grid">' + html + '</div>';
+  }
+
+  function showBanner(message) {
+    banner.innerHTML = message;
+    banner.style.display = "block";
+  }
+  function hideBanner() {
+    banner.style.display = "none";
+  }
+
+  function setLastUpdated(date, stale) {
+    var timeStr = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    lastUpdatedEl.textContent = (stale ? "Last successful update " : "Updated ") + timeStr;
+  }
+
+  function fetchStatus(isManual) {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Refreshing…";
+
+    var controller = ("AbortController" in window) ? new AbortController() : null;
+    var timeoutId = controller ? setTimeout(function () { controller.abort(); }, 12000) : null;
+
+    fetch(API_URL, { cache: "no-store", signal: controller ? controller.signal : undefined })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (timeoutId) clearTimeout(timeoutId);
+        var routes = data && data.routes;
+        if (!routes) throw new Error("Unexpected response shape");
+        latestRoutes = routes;
+        hideBanner();
+        render(latestRoutes);
+        setLastUpdated(new Date(), false);
+      })
+      .catch(function (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (latestRoutes) {
+          // Keep showing the last good data, just warn.
+          setLastUpdated(new Date(latestUpdatedTimestampOr()), true);
+          showBanner(
+            "Couldn't refresh live status just now (" + escapeHtml(err && err.message ? err.message : "network error") +
+            "). Showing the last data we loaded. &middot; " +
+            '<a href="https://new.mta.info/alerts" target="_blank" rel="noopener">Check the official MTA status page</a>'
+          );
+        } else {
+          content.innerHTML = "";
+          showBanner(
+            "Couldn't load live subway status (" + escapeHtml(err && err.message ? err.message : "network error") +
+            "). This can happen if your browser or network blocks the data source. " +
+            '<a href="https://new.mta.info/alerts" target="_blank" rel="noopener">See the official MTA status page instead</a>.'
+          );
+          lastUpdatedEl.textContent = "Couldn't load";
+        }
+      })
+      .finally(function () {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = "Refresh";
+      });
+  }
+
+  var lastGoodTimestamp = null;
+  function latestUpdatedTimestampOr() {
+    return lastGoodTimestamp || Date.now();
+  }
+
+  refreshBtn.addEventListener("click", function () { fetchStatus(true); });
+  searchInput.addEventListener("input", function () {
+    if (latestRoutes) render(latestRoutes);
+  });
+
+  function scheduleAutoRefresh() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(function () { fetchStatus(false); }, REFRESH_MS);
+  }
+
+  fetchStatus(false);
+  scheduleAutoRefresh();
+})();
+</script>
+</body>
+</html>
