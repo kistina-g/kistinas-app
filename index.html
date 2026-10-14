@@ -129,7 +129,7 @@
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-  #status-banner {
+  .banner {
     display: none;
     border: 1px solid var(--border);
     background: var(--surface-1);
@@ -140,7 +140,77 @@
     font-size: 0.85rem;
     color: var(--text-secondary);
   }
-  #status-banner a { color: inherit; }
+  .banner a { color: inherit; }
+
+  /* ---- tabs ---- */
+  .tabs {
+    display: flex;
+    gap: 18px;
+    border-bottom: 1px solid var(--gridline);
+    margin-bottom: 18px;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 2px;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .tab:hover { color: var(--text-primary); }
+  .tab:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+
+  /* ---- weather ---- */
+  .weather-now {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .weather-icon { font-size: 2.6rem; line-height: 1; flex-shrink: 0; }
+  .weather-temp { font-size: 2.3rem; font-weight: 700; line-height: 1; }
+  .weather-place { font-size: 0.92rem; font-weight: 600; margin-bottom: 2px; }
+  .weather-desc { font-size: 0.88rem; color: var(--text-secondary); margin-top: 2px; }
+  .weather-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+    gap: 8px;
+  }
+  .forecast-day {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .forecast-day .day-name { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+  .forecast-day .day-icon { font-size: 1.4rem; margin: 4px 0; }
+  .forecast-day .day-temps { font-size: 0.8rem; color: var(--text-muted); }
+  .forecast-day .day-temps b { color: var(--text-primary); font-weight: 700; }
+  .source-note {
+    margin-top: 14px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .source-note a { color: var(--text-secondary); }
 
   /* ---- sections ---- */
   .section { margin-bottom: 24px; }
@@ -376,31 +446,60 @@
       <button class="theme-btn" id="theme-toggle" type="button" aria-label="Toggle dark mode">Theme</button>
     </header>
 
-    <div class="toolbar">
-      <input class="search" id="search" type="text" placeholder="Filter by line (e.g. A, 6, L)…" aria-label="Filter lines">
-      <div class="refresh-row">
-        <span id="last-updated">Loading…</span>
-        <button class="refresh" id="refresh-btn" type="button">Refresh</button>
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tab-subway" role="tab" aria-selected="true" aria-controls="panel-subway" type="button">Subway Status</button>
+      <button class="tab" id="tab-weather" role="tab" aria-selected="false" aria-controls="panel-weather" type="button" tabindex="-1">Weather</button>
+    </div>
+
+    <div id="panel-subway" role="tabpanel" aria-labelledby="tab-subway">
+      <div class="toolbar">
+        <input class="search" id="search" type="text" placeholder="Filter by line (e.g. A, 6, L)…" aria-label="Filter lines">
+        <div class="refresh-row">
+          <span id="last-updated">Loading…</span>
+          <button class="refresh" id="refresh-btn" type="button">Refresh</button>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><span class="dot" style="background:var(--good)"></span>Good service</span>
+        <span><span class="dot" style="background:var(--warning)"></span>Planned work</span>
+        <span><span class="dot" style="background:var(--serious)"></span>Service change</span>
+        <span><span class="dot" style="background:var(--critical)"></span>Delays</span>
+        <span><span class="dot" style="background:var(--neutral)"></span>Not running now</span>
+      </div>
+
+      <div id="status-banner" class="banner"></div>
+      <div id="content"><div class="loading">Loading live status…</div></div>
+
+      <div class="source-note">
+        Status data is pulled client-side from <a href="https://www.goodservice.io/" target="_blank" rel="noopener">goodservice.io</a>,
+        a community-run, unofficial summary of MTA real-time feeds. For the official source, see
+        <a href="https://new.mta.info/alerts" target="_blank" rel="noopener">new.mta.info/alerts</a>.
+        This page refreshes automatically every 60 seconds. Click any line for its active alerts.
       </div>
     </div>
 
-    <div class="legend">
-      <span><span class="dot" style="background:var(--good)"></span>Good service</span>
-      <span><span class="dot" style="background:var(--warning)"></span>Planned work</span>
-      <span><span class="dot" style="background:var(--serious)"></span>Service change</span>
-      <span><span class="dot" style="background:var(--critical)"></span>Delays</span>
-      <span><span class="dot" style="background:var(--neutral)"></span>Not running now</span>
-    </div>
+    <div id="panel-weather" role="tabpanel" aria-labelledby="tab-weather" hidden>
+      <form class="toolbar" id="weather-form">
+        <input class="search" id="weather-search" type="text" placeholder="Search a city (e.g. Brooklyn, NY)…" aria-label="Search city for weather">
+        <div class="refresh-row">
+          <span id="weather-last-updated">Not loaded yet</span>
+          <button class="refresh" id="weather-refresh-btn" type="button">Refresh</button>
+        </div>
+      </form>
 
-    <div id="status-banner"></div>
-    <div id="content"><div class="loading">Loading live status…</div></div>
+      <div id="weather-banner" class="banner"></div>
+      <div id="weather-content"><div class="loading">Loading weather…</div></div>
+
+      <div class="source-note">
+        Weather data from <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (free, no key required).
+        For radar, hourly detail, and alerts, see <a href="https://weather.com/" target="_blank" rel="noopener">weather.com</a>.
+      </div>
+    </div>
   </div>
 
   <footer>
-    Status data is pulled client-side from <a href="https://www.goodservice.io/" target="_blank" rel="noopener">goodservice.io</a>,
-    a community-run, unofficial summary of MTA real-time feeds. For the official source, see
-    <a href="https://new.mta.info/alerts" target="_blank" rel="noopener">new.mta.info/alerts</a>.
-    This page refreshes automatically every 60 seconds. Click any line for its active alerts.
+    Built as a single static page — no server, no API keys. Switch tabs above for subway status or local weather.
   </footer>
 
   <div class="modal-overlay" id="modal-overlay" hidden>
@@ -733,6 +832,234 @@
 
   fetchStatus();
   scheduleAutoRefresh();
+
+  // ==================== Tabs ====================
+  var tabSubway = document.getElementById("tab-subway");
+  var tabWeather = document.getElementById("tab-weather");
+  var panelSubway = document.getElementById("panel-subway");
+  var panelWeather = document.getElementById("panel-weather");
+  var weatherInitialized = false;
+
+  function activateTab(name) {
+    var toSubway = name === "subway";
+    tabSubway.setAttribute("aria-selected", toSubway ? "true" : "false");
+    tabWeather.setAttribute("aria-selected", toSubway ? "false" : "true");
+    tabSubway.classList.toggle("active", toSubway);
+    tabWeather.classList.toggle("active", !toSubway);
+    tabSubway.tabIndex = toSubway ? 0 : -1;
+    tabWeather.tabIndex = toSubway ? -1 : 0;
+    panelSubway.hidden = !toSubway;
+    panelWeather.hidden = toSubway;
+    if (!toSubway && !weatherInitialized) {
+      weatherInitialized = true;
+      fetchWeather();
+      scheduleWeatherAutoRefresh();
+    }
+  }
+  tabSubway.addEventListener("click", function () { activateTab("subway"); });
+  tabWeather.addEventListener("click", function () { activateTab("weather"); });
+  [tabSubway, tabWeather].forEach(function (tabEl, idx, arr) {
+    tabEl.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      var next = arr[(idx + (e.key === "ArrowRight" ? 1 : arr.length - 1)) % arr.length];
+      next.focus();
+      next.click();
+    });
+  });
+
+  // ==================== Weather ====================
+  var WEATHER_CODES = {
+    0: ["Clear sky", "☀️"], 1: ["Mainly clear", "🌤️"], 2: ["Partly cloudy", "⛅"], 3: ["Overcast", "☁️"],
+    45: ["Fog", "🌫️"], 48: ["Freezing fog", "🌫️"],
+    51: ["Light drizzle", "🌦️"], 53: ["Drizzle", "🌦️"], 55: ["Dense drizzle", "🌧️"],
+    56: ["Freezing drizzle", "🌧️"], 57: ["Freezing drizzle", "🌧️"],
+    61: ["Light rain", "🌦️"], 63: ["Rain", "🌧️"], 65: ["Heavy rain", "🌧️"],
+    66: ["Freezing rain", "🌧️"], 67: ["Freezing rain", "🌧️"],
+    71: ["Light snow", "🌨️"], 73: ["Snow", "🌨️"], 75: ["Heavy snow", "❄️"], 77: ["Snow grains", "🌨️"],
+    80: ["Rain showers", "🌦️"], 81: ["Rain showers", "🌧️"], 82: ["Violent showers", "⛈️"],
+    85: ["Snow showers", "🌨️"], 86: ["Snow showers", "❄️"],
+    95: ["Thunderstorm", "⛈️"], 96: ["Thunderstorm, hail", "⛈️"], 99: ["Thunderstorm, hail", "⛈️"]
+  };
+  function weatherInfo(code) { return WEATHER_CODES[code] || ["Unknown", "🌡️"]; }
+
+  var weatherSearchForm = document.getElementById("weather-form");
+  var weatherSearchInput = document.getElementById("weather-search");
+  var weatherRefreshBtn = document.getElementById("weather-refresh-btn");
+  var weatherLastUpdatedEl = document.getElementById("weather-last-updated");
+  var weatherBanner = document.getElementById("weather-banner");
+  var weatherContent = document.getElementById("weather-content");
+  var weatherTimer = null;
+  var latestWeather = null;
+  var weatherLastGoodTimestamp = null;
+
+  var DEFAULT_LOCATION = { name: "New York, NY", lat: 40.7128, lon: -74.006 };
+  var currentLocation = DEFAULT_LOCATION;
+  (function restoreLocation() {
+    try {
+      var saved = window.localStorage.getItem("weatherLocation");
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.lat === "number" && typeof parsed.lon === "number") {
+          currentLocation = parsed;
+        }
+      }
+    } catch (e) { /* storage unavailable - fall back to default */ }
+    weatherSearchInput.value = currentLocation.name;
+  })();
+
+  function saveLocation(loc) {
+    try { window.localStorage.setItem("weatherLocation", JSON.stringify(loc)); } catch (e) { /* ignore */ }
+  }
+
+  function showWeatherBanner(message) {
+    weatherBanner.innerHTML = message;
+    weatherBanner.style.display = "block";
+  }
+  function hideWeatherBanner() { weatherBanner.style.display = "none"; }
+
+  function dayLabel(dateStr) {
+    var parts = dateStr.split("-").map(Number);
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return d.toLocaleDateString(undefined, { weekday: "short" });
+  }
+
+  function renderWeather(data, locationName) {
+    var cur = data.current;
+    var daily = data.daily;
+    if (!cur || !daily) throw new Error("Unexpected response shape");
+
+    var info = weatherInfo(cur.weather_code);
+    var html = (
+      '<div class="weather-now">' +
+        '<div class="weather-icon">' + info[1] + '</div>' +
+        '<div>' +
+          '<div class="weather-place">' + escapeHtml(locationName) + '</div>' +
+          '<div class="weather-temp">' + Math.round(cur.temperature_2m) + '°F</div>' +
+          '<div class="weather-desc">' + escapeHtml(info[0]) + ' &middot; Feels like ' + Math.round(cur.apparent_temperature) + '°F</div>' +
+          '<div class="weather-stats">' +
+            '<span>Humidity ' + Math.round(cur.relative_humidity_2m) + '%</span>' +
+            '<span>Wind ' + Math.round(cur.wind_speed_10m) + ' mph</span>' +
+            (cur.precipitation > 0 ? '<span>Precip ' + cur.precipitation.toFixed(2) + ' in</span>' : "") +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+
+    html += '<div class="forecast-grid">' + daily.time.map(function (dateStr, i) {
+      var dInfo = weatherInfo(daily.weather_code[i]);
+      return (
+        '<div class="forecast-day">' +
+          '<div class="day-name">' + (i === 0 ? "Today" : dayLabel(dateStr)) + '</div>' +
+          '<div class="day-icon">' + dInfo[1] + '</div>' +
+          '<div class="day-temps"><b>' + Math.round(daily.temperature_2m_max[i]) + '°</b> / ' + Math.round(daily.temperature_2m_min[i]) + '°</div>' +
+        '</div>'
+      );
+    }).join("") + '</div>';
+
+    weatherContent.innerHTML = html;
+  }
+
+  function setWeatherLastUpdated(date, stale) {
+    var timeStr = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    weatherLastUpdatedEl.textContent = (stale ? "Last successful update " : "Updated ") + timeStr;
+  }
+
+  function fetchWeather() {
+    weatherRefreshBtn.disabled = true;
+    weatherRefreshBtn.textContent = "Refreshing…";
+
+    var url = "https://api.open-meteo.com/v1/forecast?latitude=" + encodeURIComponent(currentLocation.lat) +
+      "&longitude=" + encodeURIComponent(currentLocation.lon) +
+      "&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation" +
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min" +
+      "&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=5";
+
+    var controller = ("AbortController" in window) ? new AbortController() : null;
+    var timeoutId = controller ? setTimeout(function () { controller.abort(); }, 12000) : null;
+
+    fetch(url, { cache: "no-store", signal: controller ? controller.signal : undefined })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (timeoutId) clearTimeout(timeoutId);
+        latestWeather = data;
+        weatherLastGoodTimestamp = Date.now();
+        hideWeatherBanner();
+        renderWeather(data, currentLocation.name);
+        setWeatherLastUpdated(new Date(), false);
+      })
+      .catch(function (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (latestWeather) {
+          setWeatherLastUpdated(new Date(weatherLastGoodTimestamp || Date.now()), true);
+          showWeatherBanner(
+            "Couldn't refresh weather just now (" + escapeHtml(err && err.message ? err.message : "network error") +
+            "). Showing the last data we loaded. &middot; " +
+            '<a href="https://weather.com/" target="_blank" rel="noopener">Check weather.com instead</a>'
+          );
+        } else {
+          weatherContent.innerHTML = "";
+          showWeatherBanner(
+            "Couldn't load live weather (" + escapeHtml(err && err.message ? err.message : "network error") +
+            "). This can happen if your browser or network blocks the data source. " +
+            '<a href="https://weather.com/" target="_blank" rel="noopener">See weather.com instead</a>.'
+          );
+          weatherLastUpdatedEl.textContent = "Couldn't load";
+        }
+      })
+      .finally(function () {
+        weatherRefreshBtn.disabled = false;
+        weatherRefreshBtn.textContent = "Refresh";
+      });
+  }
+
+  function geocodeAndFetch(query) {
+    weatherRefreshBtn.disabled = true;
+    weatherRefreshBtn.textContent = "Searching…";
+    var url = "https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=" + encodeURIComponent(query);
+
+    fetch(url, { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var result = data && data.results && data.results[0];
+        if (!result) {
+          showWeatherBanner("Couldn't find “" + escapeHtml(query) + ".” Try a nearby bigger city, or check the spelling.");
+          weatherRefreshBtn.disabled = false;
+          weatherRefreshBtn.textContent = "Refresh";
+          return;
+        }
+        var label = result.name +
+          (result.admin1 ? ", " + result.admin1 : "") +
+          (result.country && result.country !== "United States" ? ", " + result.country : "");
+        currentLocation = { name: label, lat: result.latitude, lon: result.longitude };
+        saveLocation(currentLocation);
+        weatherSearchInput.value = label;
+        fetchWeather();
+      })
+      .catch(function (err) {
+        showWeatherBanner("Couldn't search for that location (" + escapeHtml(err && err.message ? err.message : "network error") + "). Try again in a moment.");
+        weatherRefreshBtn.disabled = false;
+        weatherRefreshBtn.textContent = "Refresh";
+      });
+  }
+
+  weatherSearchForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = weatherSearchInput.value.trim();
+    if (q) geocodeAndFetch(q);
+  });
+  weatherRefreshBtn.addEventListener("click", function () { fetchWeather(); });
+
+  function scheduleWeatherAutoRefresh() {
+    if (weatherTimer) clearInterval(weatherTimer);
+    weatherTimer = setInterval(fetchWeather, 15 * 60 * 1000);
+  }
 })();
 </script>
 </body>
