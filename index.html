@@ -208,7 +208,6 @@
 
 
   /* ---- wardrobe ---- */
-  .wardrobe-intro { color: var(--text-secondary); font-size: .88rem; line-height: 1.55; margin: 0 0 16px; }
   .wardrobe-weather { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
   .wardrobe-weather strong { font-size:1.1rem; }
   .wardrobe-refresh-weather { border:1px solid var(--border); background:var(--surface-1); color:var(--text-secondary); border-radius:8px; padding:9px 13px; font:inherit; font-size:.82rem; cursor:pointer; }
@@ -237,6 +236,25 @@
     font-size: 0.95rem;
     margin: 0;
     font-weight: 700;
+  }
+  .wardrobe-section-head {
+    justify-content: center;
+    text-align: center;
+    margin: 4px 0 14px;
+  }
+  .wardrobe-section-head h2 {
+    font-family: ui-rounded, "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+    font-size: clamp(1.2rem, 4vw, 1.55rem);
+    font-weight: 850;
+    letter-spacing: .015em;
+    color: #ff2fa8;
+    text-shadow: 0 0 5px rgba(255, 47, 168, .35), 0 0 14px rgba(255, 47, 168, .22);
+  }
+  .wardrobe-section-head .section-count {
+    color: #ff66bd;
+    font-size: .9rem;
+    font-weight: 800;
+    text-shadow: 0 0 8px rgba(255, 47, 168, .3);
   }
   .section-count {
     font-size: 0.78rem;
@@ -488,22 +506,14 @@
     </div>
 
     <div id="panel-wardrobe" role="tabpanel" aria-labelledby="tab-wardrobe" hidden>
-      <p class="wardrobe-intro">Your wardrobe is loaded from <code>wardrobe.json</code> and the <code>wardrobe/</code> image folder in this GitHub project. Changes committed to GitHub are available on every device.</p>
       <div class="wardrobe-weather" id="wardrobe-weather-summary"><div><div class="section-count">WEATHER-BASED OUTFIT PLANNER</div><strong>Waiting for weather…</strong></div><button class="wardrobe-refresh-weather" id="wardrobe-refresh-weather" type="button">Refresh weather</button></div>
       <div class="section">
-        <div class="section-head"><h2>Update your wardrobe</h2></div>
-        <div class="wardrobe-empty">
-          To add or remove clothes, upload or delete the photo in the GitHub <code>wardrobe/</code> folder, then update <code>wardrobe.json</code> with the item's details and image path. Commit your changes.
-          <br><br><strong>Tip:</strong> Use JPG, PNG, or WebP images and keep each photo reasonably small (around 1–2 MB).
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-head"><h2>Outfit suggestion</h2></div>
+        <div class="section-head wardrobe-section-head"><h2>Outfit of the day</h2></div>
         <p class="outfit-note" id="outfit-explanation">Load the weather and add clothing to get a suggestion based on the temperature and conditions.</p>
         <div id="outfit-results" class="outfit-grid"><div class="wardrobe-empty">Your outfit will appear here once you add some clothes.</div></div>
       </div>
       <div class="section">
-        <div class="section-head"><h2>My clothes <span class="section-count" id="wardrobe-count">(0)</span></h2></div>
+        <div class="section-head wardrobe-section-head"><h2>Wardrobe I own <span class="section-count" id="wardrobe-count">(0)</span></h2></div>
         <div id="wardrobe-items" class="wardrobe-grid"><div class="wardrobe-empty">No clothes are listed yet. Add items to wardrobe.json and commit your changes to GitHub.</div></div>
       </div>
     </div>
