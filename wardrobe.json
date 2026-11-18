@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "name": "Long Black Puffer Jacket",
+    "category": "Outerwear",
+    "color": "Black",
+    "warmth": "Very warm",
+    "image": "wardrobe/black-jacket.jpg",
+    "season": ["Winter", "Fall"]
+  },
+  {
+    "id": 2,
+    "name": "Boyfriend Berksha Blue Jeans",
+    "category": "Bottoms",
+    "color": "Blue",
+    "warmth": "Medium",
+    "image": "wardrobe/berksha-blue-jeans.jpg",
+    "season": ["All season"]
+  },
+  {
+    "id": 3,
+    "name": "Fluffy Yarn Fleece Full-Zip Jacket",
+    "category": "Top",
+    "color": "Dark Blue",
+    "warmth": "Medium",
+    "image": "wardrobe/fleece-zip-Jacket.jpg",
+    "season": ["Winter", "Fall"]
+  },
+  {
+    "id": 4,
+    "name": "Half-Zip Knit Pullover Sweater",
+    "category": "Top",
+    "color": "White",
+    "warmth": "Medium",
+    "image": "wardrobe/half-knit-pullover.jpg",
+    "season": ["Winter", "Fall"]
+  },
+  {
+    "id": 5,
+    "name": "Long-Sleeve Striped T-Shirt",
+    "category": "Top",
+    "color": "Red",
+    "warmth": "Light",
+    "image": "wardrobe/longSleeve-striped.jpg",
+    "season": ["Winter", "Fall"]
+  },
+  {
+    "id": 6,
+    "name": "Long Sleeve Knit Sweater",
+    "category": "Top",
+    "color": "Black",
+    "warmth": "Medium",
+    "image": "wardrobe/longSleeve-knit-sweater.jpg",
+    "season": ["Winter", "Fall"]
+  },
+  {
+    "id": 7,
+    "name": "High-Waisted Flare Pants",
+    "category": "Bottoms",
+    "color": "Black",
+    "warmth": "Medium",
+    "image": "wardrobe/flare-pants.jpg",
+    "season": ["Winter", "Fall"]
+  },
+  {
+    "id": 8,
+    "name": "Versatile U-Neck Tank Top",
+    "category": "Top",
+    "color": "Brown",
+    "warmth": "Low",
+    "image": "wardrobe/hatler-top.jpg",
+    "season": ["Summer", "Spring"]
+  },
+  {
+    "id": 9,
+    "name": "ASICS GEL-1130",
+    "category": "Shoes",
+    "color": "White/pink",
+    "warmth": "Medium",
+    "image": "wardrobe/asics-sneakers.jpg",
+    "season": ["All season"]
+  },
+  {
+    "id": 10,
+    "name": "Coach boots",
+    "category": "Shoes",
+    "color": "Black",
+    "warmth": "Medium",
+    "image": "wardrobe/coach-boots.jpg",
+    "season": ["Winter", "Fall"]
+  }
+]

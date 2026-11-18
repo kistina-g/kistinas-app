@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NYC Subway Status</title>
-<meta name="description" content="Live NYC subway service alerts and delays, line by line.">
+<title>NYC Everyday — Subway, Weather & Wardrobe</title>
+<meta name="description" content="NYC subway status, local weather, and your personal weather-based wardrobe.">
 <style>
   :root {
     color-scheme: light;
@@ -205,6 +205,24 @@
   .forecast-day .day-temps { font-size: 0.8rem; color: var(--text-muted); }
   .forecast-day .day-temps b { color: var(--text-primary); font-weight: 700; }
   .forecast-day .day-humidity { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+
+
+  /* ---- wardrobe ---- */
+  .wardrobe-intro { color: var(--text-secondary); font-size: .88rem; line-height: 1.55; margin: 0 0 16px; }
+  .wardrobe-weather { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+  .wardrobe-weather strong { font-size:1.1rem; }
+  .wardrobe-refresh-weather { border:1px solid var(--border); background:var(--surface-1); color:var(--text-secondary); border-radius:8px; padding:9px 13px; font:inherit; font-size:.82rem; cursor:pointer; }
+  .wardrobe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:10px; }
+  .wardrobe-card { min-width:0; overflow:hidden; border:1px solid var(--border); border-radius:11px; background:var(--surface-1); }
+  .wardrobe-card img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; background:var(--chip-bg); }
+  .wardrobe-card-info { padding:9px; }
+  .wardrobe-card-name { font-size:.84rem; font-weight:650; overflow-wrap:anywhere; }
+  .wardrobe-card-meta { color:var(--text-muted); font-size:.74rem; margin-top:3px; }
+  .wardrobe-delete { border:0; background:transparent; color:var(--critical); padding:7px 0 0; font:inherit; font-size:.74rem; cursor:pointer; }
+  .outfit-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:10px; }
+  .outfit-note { color:var(--text-secondary); font-size:.8rem; line-height:1.5; margin:0 0 12px; }
+  .wardrobe-empty { border:1px dashed var(--border); border-radius:10px; padding:18px; color:var(--text-muted); font-size:.84rem; line-height:1.5; }
+  
 
   /* ---- sections ---- */
   .section { margin-bottom: 24px; }
@@ -432,6 +450,7 @@
     <div class="tabs" role="tablist">
       <button class="tab active" id="tab-subway" role="tab" aria-selected="true" aria-controls="panel-subway" type="button">Subway Status</button>
       <button class="tab" id="tab-weather" role="tab" aria-selected="false" aria-controls="panel-weather" type="button" tabindex="-1">Weather</button>
+      <button class="tab" id="tab-wardrobe" role="tab" aria-selected="false" aria-controls="panel-wardrobe" type="button" tabindex="-1">Wardrobe</button>
     </div>
 
     <div id="panel-subway" role="tabpanel" aria-labelledby="tab-subway">
@@ -466,6 +485,27 @@
 
       <div id="weather-banner" class="banner"></div>
       <div id="weather-content"><div class="loading">Loading weather…</div></div>
+    </div>
+
+    <div id="panel-wardrobe" role="tabpanel" aria-labelledby="tab-wardrobe" hidden>
+      <p class="wardrobe-intro">Your wardrobe is loaded from <code>wardrobe.json</code> and the <code>wardrobe/</code> image folder in this GitHub project. Changes committed to GitHub are available on every device.</p>
+      <div class="wardrobe-weather" id="wardrobe-weather-summary"><div><div class="section-count">WEATHER-BASED OUTFIT PLANNER</div><strong>Waiting for weather…</strong></div><button class="wardrobe-refresh-weather" id="wardrobe-refresh-weather" type="button">Refresh weather</button></div>
+      <div class="section">
+        <div class="section-head"><h2>Update your wardrobe</h2></div>
+        <div class="wardrobe-empty">
+          To add or remove clothes, upload or delete the photo in the GitHub <code>wardrobe/</code> folder, then update <code>wardrobe.json</code> with the item's details and image path. Commit your changes.
+          <br><br><strong>Tip:</strong> Use JPG, PNG, or WebP images and keep each photo reasonably small (around 1–2 MB).
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>Outfit suggestion</h2></div>
+        <p class="outfit-note" id="outfit-explanation">Load the weather and add clothing to get a suggestion based on the temperature and conditions.</p>
+        <div id="outfit-results" class="outfit-grid"><div class="wardrobe-empty">Your outfit will appear here once you add some clothes.</div></div>
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>My clothes <span class="section-count" id="wardrobe-count">(0)</span></h2></div>
+        <div id="wardrobe-items" class="wardrobe-grid"><div class="wardrobe-empty">No clothes are listed yet. Add items to wardrobe.json and commit your changes to GitHub.</div></div>
+      </div>
     </div>
   </div>
 
@@ -803,29 +843,35 @@
   // ==================== Tabs ====================
   var tabSubway = document.getElementById("tab-subway");
   var tabWeather = document.getElementById("tab-weather");
+  var tabWardrobe = document.getElementById("tab-wardrobe");
   var panelSubway = document.getElementById("panel-subway");
   var panelWeather = document.getElementById("panel-weather");
+  var panelWardrobe = document.getElementById("panel-wardrobe");
+  var tabs = [tabSubway, tabWeather, tabWardrobe];
+  var panels = [panelSubway, panelWeather, panelWardrobe];
+  var tabNames = ["subway", "weather", "wardrobe"];
   var weatherInitialized = false;
 
   function activateTab(name) {
-    var toSubway = name === "subway";
-    tabSubway.setAttribute("aria-selected", toSubway ? "true" : "false");
-    tabWeather.setAttribute("aria-selected", toSubway ? "false" : "true");
-    tabSubway.classList.toggle("active", toSubway);
-    tabWeather.classList.toggle("active", !toSubway);
-    tabSubway.tabIndex = toSubway ? 0 : -1;
-    tabWeather.tabIndex = toSubway ? -1 : 0;
-    panelSubway.hidden = !toSubway;
-    panelWeather.hidden = toSubway;
-    if (!toSubway && !weatherInitialized) {
+    var activeIndex = tabNames.indexOf(name);
+    tabs.forEach(function (tabEl, index) {
+      var active = index === activeIndex;
+      tabEl.setAttribute("aria-selected", active ? "true" : "false");
+      tabEl.classList.toggle("active", active);
+      tabEl.tabIndex = active ? 0 : -1;
+      panels[index].hidden = !active;
+    });
+    if (name !== "subway" && !weatherInitialized) {
       weatherInitialized = true;
       fetchWeather();
       scheduleWeatherAutoRefresh();
     }
+    if (name === "wardrobe") { loadWardrobe().then(renderWardrobe).catch(showWardrobeError); }
   }
   tabSubway.addEventListener("click", function () { activateTab("subway"); });
   tabWeather.addEventListener("click", function () { activateTab("weather"); });
-  [tabSubway, tabWeather].forEach(function (tabEl, idx, arr) {
+  tabWardrobe.addEventListener("click", function () { activateTab("wardrobe"); });
+  tabs.forEach(function (tabEl, idx, arr) {
     tabEl.addEventListener("keydown", function (e) {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       e.preventDefault();
@@ -1032,6 +1078,122 @@
     if (weatherTimer) clearInterval(weatherTimer);
     weatherTimer = setInterval(fetchWeather, 15 * 60 * 1000);
   }
+
+  // ==================== Wardrobe ====================
+  // Static GitHub Pages: metadata is in wardrobe.json and photos are in wardrobe/.
+  var wardrobeItems = [];
+  function loadWardrobe() {
+    return fetch("./wardrobe.json", { cache: "no-store" }).then(function (response) {
+      if (!response.ok) throw new Error("Could not load wardrobe.json (" + response.status + ").");
+      return response.json();
+    }).then(function (items) {
+      if (!Array.isArray(items)) throw new Error("wardrobe.json must contain a JSON array.");
+      wardrobeItems = items.map(function (item) {
+        return {
+          id: item.id,
+          name: String(item.name || "Unnamed item"),
+          category: String(item.category || "accessory").toLowerCase(),
+          warmth: Math.max(1, Math.min(4, Number(item.warmth) || 2)),
+          color: String(item.color || ""),
+          notes: String(item.notes || ""),
+          image: String(item.image || "")
+        };
+      }).filter(function (item) {
+        return item.image && /^wardrobe\/[A-Za-z0-9._/-]+$/.test(item.image);
+      });
+      return wardrobeItems;
+    });
+  }
+  function showWardrobeError(error) {
+    document.getElementById("wardrobe-items").innerHTML =
+      '<div class="wardrobe-empty">Could not load your GitHub wardrobe. Check that <code>wardrobe.json</code> exists and contains valid JSON. ' +
+      escapeWardrobe(error && error.message ? error.message : "") + '</div>';
+  }
+  function escapeWardrobe(value) {
+    return String(value || "").replace(/[&<>"']/g, function (c) {
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+    });
+  }
+  function wardrobeImage(item) {
+    return item.image.split("/").map(function (part) { return encodeURIComponent(part); }).join("/");
+  }
+  function renderWardrobe() {
+    var count = document.getElementById("wardrobe-count");
+    var list = document.getElementById("wardrobe-items");
+    count.textContent = "(" + wardrobeItems.length + ")";
+    if (!wardrobeItems.length) {
+      list.innerHTML = '<div class="wardrobe-empty">No clothes are listed yet. Add items to wardrobe.json and commit your changes to GitHub.</div>';
+    } else {
+      list.innerHTML = wardrobeItems.map(function (item) {
+        var labels = ["", "Light", "Medium", "Warm", "Very warm"];
+        return '<article class="wardrobe-card"><img loading="lazy" src="' + wardrobeImage(item) + '" alt="' + escapeWardrobe(item.name) + '"><div class="wardrobe-card-info"><div class="wardrobe-card-name">' + escapeWardrobe(item.name) + '</div><div class="wardrobe-card-meta">' + escapeWardrobe(item.category) + (item.color ? ' · ' + escapeWardrobe(item.color) : '') + ' · ' + labels[item.warmth] + '</div>' + (item.notes ? '<div class="wardrobe-card-meta">' + escapeWardrobe(item.notes) + '</div>' : '') + '</div></article>';
+      }).join("");
+    }
+    renderOutfit();
+    updateWardrobeWeatherSummary();
+  }
+  function updateWardrobeWeatherSummary() {
+    var summary = document.getElementById("wardrobe-weather-summary");
+    if (!latestWeather || !latestWeather.current) {
+      summary.querySelector("strong").textContent = "Weather not loaded yet";
+      return;
+    }
+    var current = latestWeather.current;
+    var info = weatherInfo(current.weather_code);
+    summary.querySelector("strong").textContent = Math.round(current.temperature_2m) + "°F · " + info[0];
+    summary.querySelector(".section-count").textContent = "" + currentLocation.name + " · Feels like " + Math.round(current.apparent_temperature) + "°F";
+  }
+  document.getElementById("wardrobe-refresh-weather").addEventListener("click", function () {
+    if (!weatherInitialized) weatherInitialized = true;
+    fetchWeather();
+  });
+  function renderOutfit() {
+    var explanation = document.getElementById("outfit-explanation");
+    var results = document.getElementById("outfit-results");
+    if (!latestWeather || !latestWeather.current) {
+      explanation.textContent = "Load the weather tab first so I can use the current temperature and conditions.";
+      results.innerHTML = '<div class="wardrobe-empty">Weather data is not available yet.</div>';
+      return;
+    }
+    if (!wardrobeItems.length) {
+      explanation.textContent = "Your weather is loaded. Add your clothes above and outfit suggestions will use those items.";
+      results.innerHTML = '<div class="wardrobe-empty">Add a few tops, bottoms, shoes, and jackets to wardrobe.json to get an outfit suggestion.</div>';
+      return;
+    }
+    var current = latestWeather.current;
+    var temp = Number(current.apparent_temperature != null ? current.apparent_temperature : current.temperature_2m);
+    var code = Number(current.weather_code);
+    var rainy = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].indexOf(code) !== -1 || Number(current.precipitation || 0) > 0;
+    var sorted = wardrobeItems.slice().sort(function (a,b) { return b.warmth - a.warmth; });
+    function choose(category, warmth) {
+      var options = sorted.filter(function (item) { return item.category === category; });
+      if (!options.length) return null;
+      options.sort(function (a,b) { return Math.abs(a.warmth - warmth) - Math.abs(b.warmth - warmth); });
+      return options[0];
+    }
+    var warmth = temp < 38 ? 4 : temp < 52 ? 3 : temp < 68 ? 2 : 1;
+    var picks = [];
+    var onePiece = choose("dress", warmth);
+    if (onePiece) picks.push(onePiece);
+    else { var top = choose("top", warmth); var bottom = choose("bottom", 1); if (top) picks.push(top); if (bottom) picks.push(bottom); }
+    var outerwear = choose("outerwear", warmth);
+    if (temp < 68 && outerwear) picks.push(outerwear);
+    var shoes = choose("shoes", 1);
+    if (shoes) picks.push(shoes);
+    var accessory = choose("accessory", rainy || temp < 45 ? 3 : 1);
+    if (accessory && (rainy || temp < 45)) picks.push(accessory);
+    var reason = "Based on a feels-like temperature of " + Math.round(temp) + "°F" + (rainy ? " and wet weather." : ".");
+    explanation.textContent = reason + " These are suggestions from your saved items; adjust them to your comfort.";
+    if (!picks.length) { results.innerHTML = '<div class="wardrobe-empty">Add a top or dress, plus shoes, to build an outfit.</div>'; return; }
+    results.innerHTML = picks.map(function (item) {
+      return '<article class="wardrobe-card"><img loading="lazy" src="' + wardrobeImage(item) + '" alt="' + escapeWardrobe(item.name) + '"><div class="wardrobe-card-info"><div class="wardrobe-card-name">' + escapeWardrobe(item.name) + '</div><div class="wardrobe-card-meta">' + escapeWardrobe(item.category) + '</div></div></article>';
+    }).join("");
+  }
+  // Update the outfit view whenever fresh forecast data arrives.
+  var originalRenderWeather = renderWeather;
+  renderWeather = function (data, locationName) { originalRenderWeather(data, locationName); updateWardrobeWeatherSummary(); renderOutfit(); };
+  loadWardrobe().then(renderWardrobe).catch(showWardrobeError);
+
 })();
 </script>
 </body>
